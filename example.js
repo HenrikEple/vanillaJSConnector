@@ -1,6 +1,6 @@
 // Shop specific setup constants 
 const shopUrl = "https://eplehusettest.myshopify.com"; // Replace with your shop URL
-const accessToken = window.VANILLA_CONNECTOR; // Use the injected environment variable
+const accessToken = "bc141eb819578a904b629a6ee47fd8b5"; // Use the injected environment variable
 
 // Cart ID to keep track of user's cart (stored in localStorage)
 let cartId = localStorage.getItem('shopify_cart_id') || null;
