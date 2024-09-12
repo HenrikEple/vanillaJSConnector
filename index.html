@@ -3,8 +3,63 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Vinalla JS GraphQL Test</title>
+        <title>Vanilla JS GraphQL Test</title>
+        <style>
+            /* Styling for the product container */
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background-color: #f4f4f4;
+            }
+
+            h1 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .product-container {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+
+            .product-card {
+                background-color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                width: 300px;
+                padding: 20px;
+                text-align: center;
+            }
+
+            .product-card h2 {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+
+            .product-card p {
+                font-size: 16px;
+                color: #555;
+            }
+
+            .product-price {
+                font-size: 18px;
+                font-weight: bold;
+                margin-top: 15px;
+            }
+        </style>
     </head>
-    <h1>Testing Shopify Storefront API GraphQL with Vanilla JS</h1>
-    <script src="./example.js"></script>
+    <body>
+        <h1>Shopify Products</h1>
+        
+        <!-- Container for products -->
+        <div id="product-container" class="product-container">
+            <!-- Products will be dynamically injected here -->
+        </div>
+
+        <!-- Link to external JavaScript file -->
+        <script src="./example.js"></script>
+    </body>
 </html>

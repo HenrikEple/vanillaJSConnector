@@ -1,17 +1,23 @@
 // Shop specific setup constants 
-// const args = process.argv.slice(2);
-const shopUrl = "https://eplehusettest.myshopify.com" // || "<myshopify shop url>";
-const accessToken = process.env.VanillaConnector // || "<storefront api access token found from private app page>";
+const shopUrl = "https://eplehusettest.myshopify.com"; // Replace with your shop URL
+const accessToken = process.env.VanillaConnector; // Replace with your Storefront API access token
 
-// Simple GraphQL with no variables
+// Cart ID to keep track of user's cart (stored in localStorage)
+let cartId = localStorage.getItem('shopify_cart_id') || null;
+
+// GraphQL query for fetching the first x products
 const query1 = `query FirstProduct {
-    products(first:1) {
+    products(first: 2) {
         edges {
             node {
                 id
                 title
                 description
-                variants(first:1) {
+                featuredImage {
+                    id
+                    url
+                }
+                variants(first: 1) {
                     edges {
                         node {
                             title
@@ -25,27 +31,88 @@ const query1 = `query FirstProduct {
                 }
             }
         }
-    }   
-}`;
-
-// Search GraphQL with one typed variable
-const query2 = `query SpecificProduct($id: ID!) {
-    node(id: $id) {
-        id
-        ... on Product {
-            title
-            description
-            id
-            handle
-        }
     }
 }`;
 
+// GraphQL mutation for creating a cart
+const cartCreateMutation = `
+  mutation cartCreate($lines: [CartLineInput!]!) {
+    cartCreate(input: {lines: $lines}) {
+      cart {
+        id
+        lines(first: 5) {
+          edges {
+            node {
+              id
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                }
+              }
+              quantity
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// GraphQL mutation for adding products to an existing cart
+const cartLinesAddMutation = `
+  mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+    cartLinesAdd(cartId: $cartId, lines: $lines) {
+      cart {
+        id
+        lines(first: 5) {
+          edges {
+            node {
+              id
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                }
+              }
+              quantity
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// Function to render a product dynamically on the page
+function renderProduct(product) {
+    const productContainer = document.getElementById('product-container');
+
+    // Create the product card element
+    const productCard = document.createElement('div');
+    productCard.classList.add('product-card');
+
+    const productImage = product.featuredImage ? product.featuredImage.url : '';
+    const productAltText = product.title || 'No image available';
+
+    // Add product information
+    productCard.innerHTML = `
+        <img src="${productImage}" alt="${productAltText}" style="width:100%; height:auto; border-radius: 8px; margin-bottom: 15px;">
+        <h2>${product.title}</h2>
+        <p>${product.description}</p>
+        <p class="product-price">${product.variants.edges[0].node.priceV2.amount} ${product.variants.edges[0].node.priceV2.currencyCode}</p>
+        <button onclick="addToCart('${product.variants.edges[0].node.id}')">Add to Shopify cart</button>
+    `;
+
+    // Append the product card to the container
+    productContainer.appendChild(productCard);
+}
+
+// Function to fetch and render the first x products
 const fetchQuery1 = () => {
-    // Define options for first query with no variables and body is string and not a json object
-    console.log("Query 1 running")
+    console.log("Query 1 running");
     const optionsQuery1 = {
-        method: "post",
+        method: "POST",
         headers: {
             "Content-Type": "application/graphql",
             "X-Shopify-Storefront-Access-Token": accessToken
@@ -53,40 +120,73 @@ const fetchQuery1 = () => {
         body: query1
     };
 
-    // Fetch data and remember product id
-    fetch(shopUrl + `/api/graphql`, optionsQuery1)
+    // Fetch the data and process each product
+    fetch(shopUrl + `/api/2024-07/graphql`, optionsQuery1)
         .then(res => res.json())
         .then(response => {
-            productId = response.data.products.edges[0].node.id; 
-            console.log("=============== Fetch First Product ===============");
-            console.log(JSON.stringify(response, null, 4));
-            fetchQuery2(productId)  
+            console.log(response)
+            const products = response.data.products.edges;
+
+            console.log("=============== Fetch Products ===============");
+            console.log(JSON.stringify(products, null, 4));
+
+            // Loop through each product and render it
+            products.forEach(productEdge => {
+                const product = productEdge.node;
+                renderProduct(product);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching products:", error);
         });
-}
+};
 
-// Fetch a specific product with example of json body with both query and variables
-const fetchQuery2 = (productId) => {
-    console.log("Query 2 running")
-    const params = {
-        query: query2,
-        variables: { id: productId}
+// Function to add a product to the cart
+async function addToCart(variantId) {
+    const quantity = 1;
+    
+    // If no cart exists, create a new one
+    if (!cartId) {
+        console.log("Creating a new cart...");
+        const createCartData = await fetch(shopUrl + `/api/2024-07/graphql`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Shopify-Storefront-Access-Token": accessToken
+            },
+            body: JSON.stringify({
+                query: cartCreateMutation,
+                variables: {
+                    lines: [{ merchandiseId: variantId, quantity: quantity }]
+                }
+            })
+        }).then(res => res.json());
+        
+        // Save the new cart ID to localStorage
+        cartId = createCartData.data.cartCreate.cart.id;
+        localStorage.setItem('shopify_cart_id', cartId);
+        console.log("New cart created:", cartId);
+    } else {
+        // If a cart already exists, update it by adding the new product
+        console.log("Adding product to existing cart...");
+        const updateCartData = await fetch(shopUrl + `/api/2024-07/graphql`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Shopify-Storefront-Access-Token": accessToken
+            },
+            body: JSON.stringify({
+                query: cartLinesAddMutation,
+                variables: {
+                    cartId: cartId,
+                    lines: [{ merchandiseId: variantId, quantity: quantity }]
+                }
+            })
+        }).then(res => res.json());
+        
+        console.log("Product added to cart:", updateCartData);
     }
-    const optionsQuery2 = {
-        method: "post",
-        headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "X-Shopify-Storefront-Access-Token": accessToken
-        },
-        body: JSON.stringify(params)
-    };
-
-    fetch(shopUrl + `/api/graphql`, optionsQuery2)
-        .then(res => res.json())
-        .then(response => {  
-            console.log("=============== Fetch Specific Product ===============");
-            console.log(JSON.stringify(response, null, 4)) 
-        });        
 }
 
+// Start fetching and rendering products
 fetchQuery1();
