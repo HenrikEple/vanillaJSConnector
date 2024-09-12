@@ -40,6 +40,7 @@ const cartCreateMutation = `
     cartCreate(input: {lines: $lines}) {
       cart {
         id
+        checkoutUrl
         lines(first: 5) {
           edges {
             node {
@@ -65,6 +66,7 @@ const cartLinesAddMutation = `
     cartLinesAdd(cartId: $cartId, lines: $lines) {
       cart {
         id
+        checkoutUrl
         lines(first: 5) {
           edges {
             node {
@@ -144,7 +146,7 @@ const fetchQuery1 = () => {
 // Function to add a product to the cart
 async function addToCart(variantId) {
     const quantity = 1;
-    
+
     // If no cart exists, create a new one
     if (!cartId) {
         console.log("Creating a new cart...");
@@ -161,11 +163,15 @@ async function addToCart(variantId) {
                 }
             })
         }).then(res => res.json());
-        
+
         // Save the new cart ID to localStorage
         cartId = createCartData.data.cartCreate.cart.id;
         localStorage.setItem('shopify_cart_id', cartId);
         console.log("New cart created:", cartId);
+
+        // Redirect to the Shopify store checkout
+        const checkoutUrl = createCartData.data.cartCreate.cart.checkoutUrl;
+        window.location.href = checkoutUrl;
     } else {
         // If a cart already exists, update it by adding the new product
         console.log("Adding product to existing cart...");
@@ -183,8 +189,12 @@ async function addToCart(variantId) {
                 }
             })
         }).then(res => res.json());
-        
+
         console.log("Product added to cart:", updateCartData);
+
+        // Redirect to the Shopify store checkout
+        const checkoutUrl = updateCartData.data.cartLinesAdd.cart.checkoutUrl;
+        window.location.href = checkoutUrl;
     }
 }
 
