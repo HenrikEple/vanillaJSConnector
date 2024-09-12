@@ -43,6 +43,7 @@ const query2 = `query SpecificProduct($id: ID!) {
 
 const fetchQuery1 = () => {
     // Define options for first query with no variables and body is string and not a json object
+    console.log("Query 1 running")
     const optionsQuery1 = {
         method: "post",
         headers: {
@@ -65,6 +66,7 @@ const fetchQuery1 = () => {
 
 // Fetch a specific product with example of json body with both query and variables
 const fetchQuery2 = (productId) => {
+    console.log("Query 2 running")
     const params = {
         query: query2,
         variables: { id: productId}
