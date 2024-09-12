@@ -103,7 +103,7 @@ function renderProduct(product) {
         <h2>${product.title}</h2>
         <p>${product.description}</p>
         <p class="product-price">${product.variants.edges[0].node.priceV2.amount} ${product.variants.edges[0].node.priceV2.currencyCode}</p>
-        <button onclick="addToCart('${product.variants.edges[0].node.id}')">Add to Shopify cart</button>
+        <button onclick="addToCart('${product.variants.edges[0].node.id}')">Kjøp Produktet NÅ!</button>
     `;
 
     // Append the product card to the container
