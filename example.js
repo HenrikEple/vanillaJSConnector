@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 // Shop specific setup constants 
 // const args = process.argv.slice(2);
 const shopUrl = "https://eplehusettest.myshopify.com" // || "<myshopify shop url>";
